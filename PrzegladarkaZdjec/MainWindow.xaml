@@ -17,12 +17,16 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="0" Content="Wybierz folder" Background="#333333" FontSize="20" Padding="10" BorderThickness="0" Foreground="White" HorizontalAlignment="Left" Click="OpenDirectory"/>
-            <Label  Grid.Column="3" Content="Nazwa pliku" FontSize="20" Padding="10" Foreground="White" HorizontalAlignment="Right" x:Name="Name"/>
+            <Button Grid.Column="1" Background="Transparent" BorderThickness="0" Height="40" Click="Rotate">
+                <Button.Content>
+                    <Image Source="rotate.png"/>
+                </Button.Content>
+            </Button>
+            <Label  Grid.Column="2" Content="Nazwa pliku" FontSize="20" Padding="10" Foreground="White" HorizontalAlignment="Right" x:Name="Name"/>
         </Grid>
 
 

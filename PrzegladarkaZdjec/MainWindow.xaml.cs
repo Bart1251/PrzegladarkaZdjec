@@ -15,10 +15,11 @@ namespace PrzegladarkaZdjec
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<BitmapImage> images = new List<BitmapImage>();
         List<string> paths = new List<string>();
-        int displayedImage = 0;
+        BitmapImage displayedImage = new BitmapImage();
+        int displayedImageIndex = 0;
         int size = 100;
+        Rotation rotation = 0;
 
         public MainWindow()
         {
@@ -33,21 +34,17 @@ namespace PrzegladarkaZdjec
             
             if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                images.Clear();
                 paths.Clear();
+                rotation = 0;
                 string[] extensions = new string[] { "jpg", "jpeg", "png", "gif", "tiff", "bmp", "svg" };
                 foreach(string extension in extensions)
                     paths.AddRange(Directory.GetFiles(dialog.SelectedPath, "*." + extension));
 
-                foreach(string path in paths)
-                {
-                    images.Add(new BitmapImage(new Uri(path)));
-                }
-                if(images.Count > 0)
+                if(paths.Count > 0)
                     DisplayImage(0);
                 else
                 {
-                    displayedImage = 0;
+                    displayedImageIndex = 0;
                     Image.Source = null;
                 }
             }
@@ -55,53 +52,68 @@ namespace PrzegladarkaZdjec
 
         private void ShowPrevious(object sender, EventArgs e)
         {
-            if (displayedImage > 0)
-                DisplayImage(displayedImage - 1);
+            if (displayedImageIndex > 0)
+            {
+                rotation = 0;
+                DisplayImage(displayedImageIndex - 1);
+            }
+        }
+
+        private void Rotate(object sender, EventArgs e)
+        {
+            if (paths.Count == 0) return;
+            rotation = (Rotation)((int)(rotation + 1) % 4);
+            DisplayImage(displayedImageIndex);
         }
 
         private void ShowNext(object sender, EventArgs e)
         {
-            if (displayedImage < images.Count - 1)
-                DisplayImage(displayedImage + 1);
+            if (displayedImageIndex < paths.Count - 1)
+            {
+                rotation = 0;
+                DisplayImage(displayedImageIndex + 1);
+            }
         }
 
         private void WindowResize(object sender, EventArgs e)
         {
-            if (images.Count > 0)
+            if (paths.Count > 0)
                 ResizeImage();
         }
 
         private void ZoomOut(object sender, EventArgs e)
         {
-            if (images.Count == 0) return;
+            if (paths.Count == 0) return;
             if ((int)Math.Round(size / 20.0) * 20 > 20)
             {
                 FitScreenBtn.IsEnabled = true;
+                OriginalSizeBtn.IsEnabled = true;
                 size = (int)Math.Round(size / 20.0) * 20;
                 size -= 20;
-                Image.Width = images[displayedImage].Width * size / 100;
-                Image.Height = images[displayedImage].Height * size / 100;
+                Image.Width = displayedImage.Width * size / 100;
+                Image.Height = displayedImage.Height * size / 100;
                 Size.Content = size.ToString() + "%";
             }
         }
 
         private void ZoomIn(object sender, EventArgs e)
         {
-            if (images.Count == 0) return;
+            if (paths.Count == 0) return;
             if ((int)Math.Round(size / 20.0) * 20 < 200)
             {
                 FitScreenBtn.IsEnabled = true;
+                OriginalSizeBtn.IsEnabled = true;
                 size = (int)Math.Round(size / 20.0) * 20;
                 size += 20;
-                Image.Width = images[displayedImage].Width * size / 100;
-                Image.Height = images[displayedImage].Height * size / 100;
+                Image.Width = displayedImage.Width * size / 100;
+                Image.Height = displayedImage.Height * size / 100;
                 Size.Content = size.ToString() + "%";
             }
         }
 
         private void OriginalSize(object sender, RoutedEventArgs e)
         {
-            if (images.Count == 0) return;
+            if (paths.Count == 0) return;
             OriginalSizeBtn.IsEnabled = false;
             FitScreenBtn.IsEnabled = true;
             ResizeImage();
@@ -109,7 +121,7 @@ namespace PrzegladarkaZdjec
 
         private void FitScreen(object sender, EventArgs e)
         {
-            if (images.Count == 0) return;
+            if (paths.Count == 0) return;
             FitScreenBtn.IsEnabled = false;
             OriginalSizeBtn.IsEnabled = true;
             ResizeImage();
@@ -117,56 +129,56 @@ namespace PrzegladarkaZdjec
 
         private void OriginalFit()
         {
-            Image.Width = images[displayedImage].Width;
-            Image.Height = images[displayedImage].Height;
+            Image.Width = displayedImage.Width;
+            Image.Height = displayedImage.Height;
             size = 100;
         }
 
         private void ResizeFit()
         {
-            if (images[displayedImage].Width > ImageGrid.ActualWidth - 60)
+            if (displayedImage.Width > ImageGrid.ActualWidth - 60)
             {
                 Image.Width = ImageGrid.ActualWidth - 60;
-                if (images[displayedImage].Height * (ImageGrid.ActualWidth - 60) / images[displayedImage].Width > ImageGrid.ActualHeight)
+                if (displayedImage.Height * (ImageGrid.ActualWidth - 60) / displayedImage.Width > ImageGrid.ActualHeight)
                 {
                     Image.Height = ImageGrid.ActualHeight;
-                    Image.Width = images[displayedImage].Width * ImageGrid.ActualHeight / images[displayedImage].Height;
-                    size = (int)(ImageGrid.ActualHeight / images[displayedImage].Height * 100);
+                    Image.Width = displayedImage.Width * ImageGrid.ActualHeight / displayedImage.Height;
+                    size = (int)(ImageGrid.ActualHeight / displayedImage.Height * 100);
                 }
                 else
                 {
-                    Image.Height = images[displayedImage].Height * (ImageGrid.ActualWidth - 60) / images[displayedImage].Width;
-                    size = (int)((ImageGrid.ActualWidth - 60) / images[displayedImage].Width * 100);
+                    Image.Height = displayedImage.Height * (ImageGrid.ActualWidth - 60) / displayedImage.Width;
+                    size = (int)((ImageGrid.ActualWidth - 60) / displayedImage.Width * 100);
                 }
             }
-            else if (images[displayedImage].Height > ImageGrid.Height)
+            else if (displayedImage.Height > ImageGrid.Height)
             {
                 Image.Height = ImageGrid.ActualHeight;
-                if (images[displayedImage].Width * ImageGrid.ActualHeight / images[displayedImage].Height > ImageGrid.ActualWidth - 60)
+                if (displayedImage.Width * ImageGrid.ActualHeight / displayedImage.Height > ImageGrid.ActualWidth - 60)
                 {
                     Image.Width = ImageGrid.ActualWidth - 60;
-                    Image.Height = images[displayedImage].Height * (ImageGrid.ActualWidth - 60) / images[displayedImage].Width;
-                    size = (int)((ImageGrid.ActualWidth - 60) / images[displayedImage].Width * 100);
+                    Image.Height = displayedImage.Height * (ImageGrid.ActualWidth - 60) / displayedImage.Width;
+                    size = (int)((ImageGrid.ActualWidth - 60) / displayedImage.Width * 100);
                 }
                 else
                 {
-                    Image.Width = images[displayedImage].Width * ImageGrid.ActualHeight / images[displayedImage].Height;
-                    size = (int)(ImageGrid.ActualHeight / images[displayedImage].Height * 100);
+                    Image.Width = displayedImage.Width * ImageGrid.ActualHeight / displayedImage.Height;
+                    size = (int)(ImageGrid.ActualHeight / displayedImage.Height * 100);
                 }
             }
             else
             {
-                if (ImageGrid.ActualHeight < images[displayedImage].Height * (ImageGrid.ActualWidth - 60) / images[displayedImage].Width)
+                if (ImageGrid.ActualHeight > displayedImage.Height * (ImageGrid.ActualWidth - 60) / displayedImage.Width)
                 {
                     Image.Width = ImageGrid.ActualWidth;
-                    Image.Height = images[displayedImage].Height * (ImageGrid.ActualWidth - 60) / images[displayedImage].Width;
-                    size = (int)((ImageGrid.ActualWidth - 60) / images[displayedImage].Width * 100);
+                    Image.Height = displayedImage.Height * (ImageGrid.ActualWidth - 60) / displayedImage.Width;
+                    size = (int)((ImageGrid.ActualWidth - 60) / displayedImage.Width * 100);
                 }
                 else
                 {
                     Image.Height = ImageGrid.ActualHeight;
-                    Image.Width = images[displayedImage].Width * ImageGrid.ActualHeight / images[displayedImage].Height;
-                    size = (int)(ImageGrid.ActualHeight / images[displayedImage].Height * 100);
+                    Image.Width = displayedImage.Width * ImageGrid.ActualHeight / displayedImage.Height;
+                    size = (int)(ImageGrid.ActualHeight / displayedImage.Height * 100);
                 }
             }
         }
@@ -183,8 +195,13 @@ namespace PrzegladarkaZdjec
 
         private void DisplayImage(int i)
         {
-            displayedImage = i;
-            Image.Source = images[i];
+            displayedImageIndex = i;
+            displayedImage = new BitmapImage();
+            displayedImage.BeginInit();
+            displayedImage.UriSource = new Uri(paths[i]);
+            displayedImage.Rotation = rotation;
+            displayedImage.EndInit();
+            Image.Source = displayedImage;
             Name.Content = paths[i].Split("\\").Last();
             FitScreenBtn.IsEnabled = false;
             OriginalSizeBtn.IsEnabled = true;
